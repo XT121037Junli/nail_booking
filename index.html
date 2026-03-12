@@ -1,145 +1,176 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
-  <meta charset="UTF-8">
-  <title>美甲預約系統</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .slot { display:inline-block; padding:10px; margin:5px; border-radius:8px; cursor:pointer; }
-    .available { background-color:#28a745; color:white; }
-    .booked { background-color:#dc3545; color:white; cursor:not-allowed; }
-    .selected { border:3px solid #000; }
-    .admin { margin-top:30px; border-top:2px solid #ccc; padding-top:20px; }
-    .hidden { display:none; }
-  </style>
+    <meta charset="UTF-8">
+    <title>美甲預約系統</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .slot {
+            display: inline-block;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .available {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .booked {
+            background-color: #dc3545;
+            color: white;
+            cursor: not-allowed;
+        }
+
+        .selected {
+            border: 3px solid #000;
+        }
+
+        .admin {
+            margin-top: 30px;
+            border-top: 2px solid #ccc;
+            padding-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
+
 <body>
-  <h1>美甲預約表單</h1>
-  
-  <form id="bookingForm">
-    姓名：<input type="text" id="name" required><br>
-    聯絡方式：<input type="text" id="contact" required><br>
-    日期：<input type="date" id="dateSelect" required><br>
-    施作項目：
-    <select id="service" required>
-      <option value="">請選擇</option>
-      <option value="單色">單色</option>
-      <option value="貓眼">貓眼</option>
-      <option value="卸甲">卸甲</option>
-      <option value="造型">造型</option>
-    </select><br>
-    備註：<br>
-    <textarea id="note" rows="3" cols="30"></textarea><br>
-    <div id="slotIcons"></div>
-    <input type="hidden" id="selectedSlot">
-    <button type="submit">確認預約</button>
-  </form>
+    <h1>美甲預約表單</h1>
 
-  <div class="admin">
-    <h2>後台管理介面</h2>
-    <input type="password" id="adminPassword" placeholder="輸入密碼">
-    <button onclick="checkPassword()">登入後台</button>
-    <div id="adminPanel" class="hidden"></div>
-  </div>
+    <form id="bookingForm">
+        姓名：<input type="text" id="name" required><br>
+        聯絡方式：<input type="text" id="contact" required><br>
+        日期：<input type="date" id="dateSelect" required><br>
+        施作項目：
+        <select id="service" required>
+            <option value="">請選擇</option>
+            <option value="單色">單色</option>
+            <option value="貓眼">貓眼</option>
+            <option value="卸甲">卸甲</option>
+            <option value="造型">造型</option>
+        </select><br>
+        備註：<br>
+        <textarea id="note" rows="3" cols="30"></textarea><br>
+        <div id="slotIcons"></div>
+        <input type="hidden" id="selectedSlot">
+        <button type="submit">確認預約</button>
+    </form>
 
-  <script>
-    const defaultSlots = ["11:00","15:00","18:00"];
-    let bookings = {};
-    let currentSelected = null;
+    <div class="admin">
+        <h2>後台管理介面</h2>
+        <input type="password" id="adminPassword" placeholder="輸入密碼">
+        <button onclick="checkPassword()">登入後台</button>
+        <div id="adminPanel" class="hidden"></div>
+    </div>
 
-    function renderSlots(date){
-      const container = document.getElementById("slotIcons");
-      container.innerHTML="";
-      if(!bookings[date]){
-        bookings[date]=defaultSlots.map(time=>({time,booked:false,name:"",contact:"",note:"",service:""}));
-      }
-      bookings[date].forEach((slot,index)=>{
-        const div=document.createElement("div");
-        div.className="slot "+(slot.booked?"booked":"available");
-        div.textContent=slot.time;
-        if(!slot.booked){
-          div.onclick=()=>{
-            document.getElementById("selectedSlot").value=index;
-            if(currentSelected) currentSelected.classList.remove("selected");
-            div.classList.add("selected");
-            currentSelected=div;
-          };
+    <script>
+        const defaultSlots = ["11:00", "15:00", "18:00"];
+        let bookings = {};
+        let currentSelected = null;
+
+        function renderSlots(date) {
+            const container = document.getElementById("slotIcons");
+            container.innerHTML = "";
+            if (!bookings[date]) {
+                bookings[date] = defaultSlots.map(time => ({ time, booked: false, name: "", contact: "", note: "", service: "" }));
+            }
+            bookings[date].forEach((slot, index) => {
+                const div = document.createElement("div");
+                div.className = "slot " + (slot.booked ? "booked" : "available");
+                div.textContent = slot.time;
+                if (!slot.booked) {
+                    div.onclick = () => {
+                        document.getElementById("selectedSlot").value = index;
+                        if (currentSelected) currentSelected.classList.remove("selected");
+                        div.classList.add("selected");
+                        currentSelected = div;
+                    };
+                }
+                container.appendChild(div);
+            });
         }
-        container.appendChild(div);
-      });
-    }
 
-    document.getElementById("dateSelect").onchange=function(){
-      if(this.value) renderSlots(this.value);
-    };
+        document.getElementById("dateSelect").onchange = function () {
+            if (this.value) renderSlots(this.value);
+        };
 
-    document.getElementById("bookingForm").onsubmit=function(e){
-      e.preventDefault();
-      const date=document.getElementById("dateSelect").value;
-      const index=document.getElementById("selectedSlot").value;
-      if(!date||index===""){alert("請選擇日期與時段");return;}
-      const slot=bookings[date][index];
-      const name=document.getElementById("name").value;
-      const contact=document.getElementById("contact").value;
-      const note=document.getElementById("note").value;
-      const service=document.getElementById("service").value;
 
-      if(!slot.booked){
-        slot.booked=true;
-        slot.name=name;
-        slot.contact=contact;
-        slot.note=note;
-        slot.service=service;
-        alert("預約成功："+date+" "+slot.time+"，項目："+slot.service);
-      } else {
-        if(slot.name===name && slot.contact===contact){
-          slot.note=note;
-          slot.service=service;
-          alert("已更新預約："+date+" "+slot.time+"，項目："+slot.service);
-        } else {
-          alert("該時段已有人預約，請選擇其他時段");
-          return;
+        document.getElementById("bookingForm").onsubmit = async function (e) {
+            e.preventDefault();
+            const date = document.getElementById("dateSelect").value;
+            const index = document.getElementById("selectedSlot").value;
+            if (!date || index === "") { alert("請選擇日期與時段"); return; }
+            const name = document.getElementById("name").value;
+            const contact = document.getElementById("contact").value;
+            const note = document.getElementById("note").value;
+            const service = document.getElementById("service").value;
+            const time = defaultSlots[index];
+
+            // 呼叫後端 API
+            const res = await fetch("https://nail-booking-rxq9.onrender.com/api/bookings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ date, time, name, contact, service, note })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("預約成功：" + date + " " + time + "，項目：" + service);
+            } else {
+                alert("預約失敗：" + data.message);
+            }
+        };
+
+
+
+        function checkPassword() {
+            const pwd = document.getElementById("adminPassword").value;
+            if (pwd === "850122") {
+                document.getElementById("adminPanel").classList.remove("hidden");
+                showAdmin();
+            } else {
+                alert("密碼錯誤");
+            }
         }
-      }
-      renderSlots(date);
-    };
 
-    function checkPassword(){
-      const pwd=document.getElementById("adminPassword").value;
-      if(pwd==="850122"){
-        document.getElementById("adminPanel").classList.remove("hidden");
-        showAdmin();
-      } else {
-        alert("密碼錯誤");
-      }
-    }
+        function showAdmin() {
+            const panel = document.getElementById("adminPanel");
+            panel.innerHTML = "";
+            for (const date in bookings) {
+                const h = document.createElement("h3");
+                h.textContent = date;
+                panel.appendChild(h);
+                bookings[date].forEach((slot, index) => {
+                    const p = document.createElement("p");
+                    if (slot.booked) {
+                        p.textContent = `${slot.time} → ${slot.name}, ${slot.contact}, 項目:${slot.service}, 備註:${slot.note} `;
+                        const btn = document.createElement("button");
+                        btn.textContent = "刪除";
+                        btn.onclick = () => {
+                            slot.booked = false;
+                            slot.name = ""; slot.contact = ""; slot.note = ""; slot.service = "";
+                            showAdmin();
+                        };
+                        p.appendChild(btn);
+                    } else {
+                        p.textContent = slot.time + " → 可預約";
+                    }
+                    panel.appendChild(p);
+                });
+            }
+        }
 
-    function showAdmin(){
-      const panel=document.getElementById("adminPanel");
-      panel.innerHTML="";
-      for(const date in bookings){
-        const h=document.createElement("h3");
-        h.textContent=date;
-        panel.appendChild(h);
-        bookings[date].forEach((slot,index)=>{
-          const p=document.createElement("p");
-          if(slot.booked){
-            p.textContent=`${slot.time} → ${slot.name}, ${slot.contact}, 項目:${slot.service}, 備註:${slot.note} `;
-            const btn=document.createElement("button");
-            btn.textContent="刪除";
-            btn.onclick=()=>{
-              slot.booked=false;
-              slot.name=""; slot.contact=""; slot.note=""; slot.service="";
-              showAdmin();
-            };
-            p.appendChild(btn);
-          } else {
-            p.textContent=slot.time+" → 可預約";
-          }
-          panel.appendChild(p);
-        });
-      }
-    }
-  </script>
+    </script>
 </body>
+
 </html>
